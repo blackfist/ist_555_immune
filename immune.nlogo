@@ -39,6 +39,7 @@ to go
 
   ask macrophages [
     move
+    detect-antigen
   ]
 
   ask lymphocytes [
@@ -58,6 +59,12 @@ to setup-bone-marrow
   set bone_marrow? (distancexy 10 10) < 4
   if bone_marrow? [
     set pcolor pink
+  ]
+end
+
+to detect-antigen
+  if (distance min-one-of antigens [distance myself] <= 0.5) [
+    show "I am touching an antigen"
   ]
 end
 
@@ -145,7 +152,7 @@ antigen_count
 antigen_count
 0
 100
-50.0
+14.0
 1
 1
 NIL
