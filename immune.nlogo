@@ -65,7 +65,6 @@ end
 to detect-antigen
   let nearest min-one-of antigens [distance myself]
   if (distance nearest <= 0.5) [
-    show "I am touching an antigen"
     ask nearest [
       die ]
   ]
