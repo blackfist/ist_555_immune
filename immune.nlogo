@@ -63,8 +63,11 @@ to setup-bone-marrow
 end
 
 to detect-antigen
-  if (distance min-one-of antigens [distance myself] <= 0.5) [
+  let nearest min-one-of antigens [distance myself]
+  if (distance nearest <= 0.5) [
     show "I am touching an antigen"
+    ask nearest [
+      die ]
   ]
 end
 
@@ -75,11 +78,16 @@ to move
 end
 
 to reproduce-antigen
-  if random-float 100 < 5 [
+  ; five percent chance of reproducing on every tick
+  if random-float 100 <= 5 [
     hatch 1 [
       rt random-float 360 fd 1
     ]
   ]
+
+  ; five percent chance of dying on every tick
+  if random-float 100 <= 5 [
+    die ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
