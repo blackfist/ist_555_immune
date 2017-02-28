@@ -8,6 +8,14 @@ patches-own [
   bone_marrow?
 ]
 
+antigens-own [
+  secret_code
+]
+
+macrophages-own [
+  learned_code
+]
+
 to setup
   clear-all
   set-default-shape antigens "bug"
@@ -16,9 +24,16 @@ to setup
     setup-lymph-node
     ;setup-bone-marrow
   ]
+
+  ; set a 4 digit random code for the antigens
+  ; this represents their specific protein
+  ; configuration that has to be learned by
+  ; the immune system
+  let antigen_secret random 999 + 1000
   create-antigens antigen_count [
     set color red
     setxy random-xcor random-ycor
+    set secret_code antigen_secret
   ]
   create-macrophages 5 [
     set color white
@@ -65,6 +80,8 @@ end
 to detect-antigen
   let nearest min-one-of antigens [distance myself]
   if (distance nearest <= 0.5) [
+    set learned_code [secret_code] of nearest
+    set color green
     ask nearest [
       die ]
   ]
