@@ -29,7 +29,7 @@ to setup
   ; this represents their specific protein
   ; configuration that has to be learned by
   ; the immune system
-  let antigen_secret random 999 + 1000
+  let antigen_secret random 8999 + 1000
   create-antigens antigen_count [
     set color red
     setxy random-xcor random-ycor
@@ -78,12 +78,11 @@ to setup-bone-marrow
 end
 
 to detect-antigen
-  let nearest min-one-of antigens [distance myself]
-  if (distance nearest <= 0.5) [
+  let nearest one-of antigens-here
+  if nearest != nobody [
     set learned_code [secret_code] of nearest
     set color green
-    ask nearest [
-      die ]
+    ask nearest [die]
   ]
 end
 
