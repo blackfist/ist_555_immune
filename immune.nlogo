@@ -1,14 +1,9 @@
-breed [antigens antigen] ; foregin invaders in body
+breed [pathogens pathogen] ; foregin invaders in body
 breed [lymphocytes lymphocyte] ; immune cells. Need activating
 breed [macrophages macrophage] ; immune cells. Identify intruders
 breed [activators activator] ; activator protein turns on lymphocites
 
-patches-own [
-  lymph_node?
-  bone_marrow?
-]
-
-antigens-own [
+pathogens-own [
   secret_code
 ]
 
@@ -16,24 +11,25 @@ macrophages-own [
   learned_code
 ]
 
+lymphocytes-own [
+  learned_code
+]
+
 to setup
   clear-all
-  set-default-shape antigens "bug"
+  set-default-shape pathogens "bug"
   set-default-shape lymphocytes "square 2"
-  ask patches [
-    setup-lymph-node
-    ;setup-bone-marrow
-  ]
 
-  ; set a 4 digit random code for the antigens
+
+  ; set a 4 digit random code for the pathogens
   ; this represents their specific protein
   ; configuration that has to be learned by
   ; the immune system
-  let antigen_secret random 8999 + 1000
-  create-antigens antigen_count [
+  let pathogen_secret random 8999 + 1000
+  create-pathogens pathogen_count [
     set color red
     setxy random-xcor random-ycor
-    set secret_code antigen_secret
+    set secret_code pathogen_secret
   ]
   create-macrophages 5 [
     set color white
@@ -47,14 +43,15 @@ to setup
 end
 
 to go
-  ask antigens [
+  ask pathogens [
     move
-    reproduce-antigen
+    reproduce-pathogen
   ]
 
   ask macrophages [
     move
-    detect-antigen
+    detect-pathogen
+    detect-lymphocyte
   ]
 
   ask lymphocytes [
@@ -63,26 +60,21 @@ to go
   tick
 end
 
-to setup-lymph-node
-  set lymph_node? (distancexy -10 -10) < 3
-  if lymph_node? [
-    set pcolor blue
-  ]
-end
-
-to setup-bone-marrow
-  set bone_marrow? (distancexy 10 10) < 4
-  if bone_marrow? [
-    set pcolor pink
-  ]
-end
-
-to detect-antigen
-  let nearest one-of antigens-here
+to detect-pathogen
+  let nearest one-of pathogens-here
   if nearest != nobody [
     set learned_code [secret_code] of nearest
     set color green
     ask nearest [die]
+  ]
+end
+
+to detect-lymphocyte
+  let nearest one-of lymphocytes-here
+  if nearest != nobody [
+    ask nearest [set learned_code learned_code
+      set color green
+    ]
   ]
 end
 
@@ -92,9 +84,9 @@ to move
   fd 1
 end
 
-to reproduce-antigen
-  ; five percent chance of reproducing on every tick
-  if random-float 100 <= 5 [
+to reproduce-pathogen
+  ; ten percent chance of reproducing on every tick
+  if random-float 100 <= 10 [
     hatch 1 [
       rt random-float 360 fd 1
     ]
@@ -171,11 +163,11 @@ SLIDER
 153
 204
 186
-antigen_count
-antigen_count
+pathogen_count
+pathogen_count
 0
 100
-14.0
+1.0
 1
 1
 NIL
@@ -197,7 +189,7 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot count antigens"
+"default" 1.0 0 -16777216 true "" "plot count pathogens"
 
 @#$#@#$#@
 ## WHAT IS IT?
