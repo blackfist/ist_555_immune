@@ -48,7 +48,7 @@ to go
     update-tick-count
   ]
 
-  if count pathogens = 0 [
+  if count lymphocytes > 10000 [
     ask lymphocytes [
       set color white
       set activated? false
@@ -262,11 +262,12 @@ pathogens
 0.0
 10.0
 true
-false
+true
 "" ""
 PENS
-"default" 1.0 0 -2674135 true "" "plot count pathogens"
-"pen-1" 1.0 0 -13840069 true "" "plot count lymphocytes"
+"pathogen" 1.0 0 -2674135 true "" "plot count pathogens"
+"lymph" 1.0 0 -13840069 true "" "plot count lymphocytes"
+"macro" 1.0 0 -14070903 true "" "plot count macrophages"
 
 SLIDER
 32
@@ -277,7 +278,7 @@ lymphocyte_production
 lymphocyte_production
 1
 100
-20.0
+50.0
 1
 1
 NIL

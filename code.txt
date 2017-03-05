@@ -48,7 +48,7 @@ to go
     update-tick-count
   ]
   
-  if count pathogens = 0 [
+  if count lymphocytes > 10000 [
     ask lymphocytes [
       set color white
       set activated? false
