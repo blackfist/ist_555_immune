@@ -8,11 +8,14 @@ pathogens-own [
 ]
 
 macrophages-own [
+  activated?
   learned_code
 ]
 
 lymphocytes-own [
   learned_code
+  activated?
+  tick-count
 ]
 
 to setup
@@ -20,25 +23,9 @@ to setup
   set-default-shape pathogens "bug"
   set-default-shape lymphocytes "square 2"
 
+  add-new-pathogen
 
-  ; set a 4 digit random code for the pathogens
-  ; this represents their specific protein
-  ; configuration that has to be learned by
-  ; the immune system
-  let pathogen_secret random 8999 + 1000
-  create-pathogens pathogen_count [
-    set color red
-    setxy random-xcor random-ycor
-    set secret_code pathogen_secret
-  ]
-  create-macrophages 5 [
-    set color white
-    setxy random-xcor random-ycor
-  ]
-  create-lymphocytes 10 [
-    set color white
-    setxy random-xcor random-ycor
-  ]
+  produce-immune-cells
   reset-ticks
 end
 
@@ -50,30 +37,76 @@ to go
 
   ask macrophages [
     move
-    detect-pathogen
+    macrophage-detect-pathogen
     detect-lymphocyte
   ]
 
   ask lymphocytes [
     move
+    reproduce-lymphocyte
+    lymphocyte-detect-pathogen
+    update-tick-count
   ]
+
+  if count pathogens = 0 [
+    ask lymphocytes [
+      set color white
+      set activated? false
+    ]
+  ]
+
+  every 1 [produce-immune-cells]
+  every 1 [ask n-of lymphocyte_production lymphocytes [die]]
   tick
 end
 
-to detect-pathogen
-  let nearest one-of pathogens-here
-  if nearest != nobody [
-    set learned_code [secret_code] of nearest
-    set color green
-    ask nearest [die]
+to add-new-pathogen
+  ; set a 4 digit random code for the pathogens
+  ; this represents their specific protein
+  ; configuration that has to be learned by
+  ; the immune system
+  let pathogen_secret random 8999 + 1000
+  create-pathogens pathogen_count [
+    set color red
+    setxy random-xcor random-ycor
+    set secret_code pathogen_secret
+  ]
+end
+to macrophage-detect-pathogen
+  if not activated? [
+    let nearest one-of pathogens-here
+    if nearest != nobody [
+      set learned_code [secret_code] of nearest
+      set activated? true
+      set color green
+      ask nearest [die]
+    ]
+  ]
+end
+
+to lymphocyte-detect-pathogen
+  if activated? [
+    let nearest one-of pathogens-here
+    if nearest != nobody [
+      let pathogen_code [secret_code] of nearest
+      if pathogen_code = learned_code [
+        ask nearest [die]
+      ]
+    ]
   ]
 end
 
 to detect-lymphocyte
-  let nearest one-of lymphocytes-here
-  if nearest != nobody [
-    ask nearest [set learned_code learned_code
-      set color green
+  if activated? [
+    let nearest one-of lymphocytes-here
+    let my_code learned_code
+    if nearest != nobody [
+      ask nearest [set learned_code my_code
+        set activated? true
+        set color green
+      ]
+      ; after it passes on the knowledge of the pathogen the macrophage is used up
+      die
     ]
   ]
 end
@@ -96,12 +129,55 @@ to reproduce-pathogen
   if random-float 100 <= 5 [
     die ]
 end
+
+to produce-immune-cells
+  create-lymphocytes lymphocyte_production [
+    set color white
+    setxy random-xcor random-ycor
+    set activated? false
+    set tick-count 0
+  ]
+
+  ; Produces 1/10th the macrophages as lymphocytes
+  ; and ensures at least one macrophage produced
+  let macro-production max list (lymphocyte_production / 10) 1
+
+  create-macrophages macro-production  [
+    set color white
+    setxy random-xcor random-ycor
+    set activated? false
+  ]
+end
+to reproduce-lymphocyte
+  ; ten percent chance of reproducing on every tick
+  ; this only applies to active lymphocytes that have
+  ; been triggered to reproduce through mitosis. Unactivated
+  ; lymphocytes are produced by the body.
+  let my_code learned_code
+  if activated? [
+    if random-float 100 <= 10 [
+      hatch 1 [
+        set learned_code my_code
+        set activated? true
+        set color green
+      ]
+    ]
+  ]
+end
+
+to update-tick-count
+  set tick-count tick-count + 1
+  ; lymphocytes have to die of old age eventually
+  ; We say 3 seconds which is 45 ticks when the
+  ; frame rate is 15 ticks/second
+  if tick-count = 120 [die]
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
+303
 10
-647
-448
+844
+552
 -1
 -1
 13.0
@@ -114,15 +190,15 @@ GRAPHICS-WINDOW
 1
 1
 1
--16
-16
--16
-16
+-20
+20
+-20
+20
 1
 1
 1
 ticks
-30.0
+15.0
 
 BUTTON
 39
@@ -142,9 +218,9 @@ NIL
 1
 
 BUTTON
-43
+39
 81
-106
+102
 114
 NIL
 go
@@ -161,26 +237,26 @@ NIL
 SLIDER
 32
 153
-204
+233
 186
 pathogen_count
 pathogen_count
-0
+1
 100
-1.0
+50.0
 1
 1
 NIL
 HORIZONTAL
 
 PLOT
-14
+10
 208
-214
-358
-plot 1
+281
+391
+cell count
 NIL
-NIL
+pathogens
 0.0
 10.0
 0.0
@@ -189,7 +265,40 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot count pathogens"
+"default" 1.0 0 -2674135 true "" "plot count pathogens"
+"pen-1" 1.0 0 -13840069 true "" "plot count lymphocytes"
+
+SLIDER
+32
+120
+233
+153
+lymphocyte_production
+lymphocyte_production
+1
+100
+20.0
+1
+1
+NIL
+HORIZONTAL
+
+BUTTON
+116
+37
+179
+70
+new
+add-new-pathogen
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 ## WHAT IS IT?

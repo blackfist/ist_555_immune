@@ -1,88 +1,113 @@
-breed [antigens antigen] ; foregin invaders in body
+breed [pathogens pathogen] ; foregin invaders in body
 breed [lymphocytes lymphocyte] ; immune cells. Need activating
 breed [macrophages macrophage] ; immune cells. Identify intruders
 breed [activators activator] ; activator protein turns on lymphocites
 
-patches-own [
-  lymph_node?
-  bone_marrow?
-]
-
-antigens-own [
+pathogens-own [
   secret_code
 ]
 
 macrophages-own [
+  activated?
   learned_code
+]
+
+lymphocytes-own [
+  learned_code
+  activated?
+  tick-count
 ]
 
 to setup
   clear-all
-  set-default-shape antigens "bug"
+  set-default-shape pathogens "bug"
   set-default-shape lymphocytes "square 2"
-  ask patches [
-    setup-lymph-node
-    ;setup-bone-marrow
-  ]
-
-  ; set a 4 digit random code for the antigens
-  ; this represents their specific protein
-  ; configuration that has to be learned by
-  ; the immune system
-  let antigen_secret random 8999 + 1000
-  create-antigens antigen_count [
-    set color red
-    setxy random-xcor random-ycor
-    set secret_code antigen_secret
-  ]
-  create-macrophages 5 [
-    set color white
-    setxy random-xcor random-ycor
-  ]
-  create-lymphocytes 10 [
-    set color white
-    setxy random-xcor random-ycor
-  ]
+  
+  add-new-pathogen
+  
+  produce-immune-cells
   reset-ticks
 end
 
 to go
-  ask antigens [
+  ask pathogens [
     move
-    reproduce-antigen
+    reproduce-pathogen
   ]
 
   ask macrophages [
     move
-    detect-antigen
+    macrophage-detect-pathogen
+    detect-lymphocyte
   ]
 
   ask lymphocytes [
     move
+    reproduce-lymphocyte
+    lymphocyte-detect-pathogen
+    update-tick-count
   ]
+  
+  if count pathogens = 0 [
+    ask lymphocytes [
+      set color white
+      set activated? false
+    ]
+  ]
+  
+  every 1 [produce-immune-cells]
+  every 1 [ask n-of lymphocyte_production lymphocytes [die]]
   tick
 end
 
-to setup-lymph-node
-  set lymph_node? (distancexy -10 -10) < 3
-  if lymph_node? [
-    set pcolor blue
+to add-new-pathogen
+  ; set a 4 digit random code for the pathogens
+  ; this represents their specific protein
+  ; configuration that has to be learned by
+  ; the immune system
+  let pathogen_secret random 8999 + 1000
+  create-pathogens pathogen_count [
+    set color red
+    setxy random-xcor random-ycor
+    set secret_code pathogen_secret
+  ]
+end
+to macrophage-detect-pathogen
+  if not activated? [
+    let nearest one-of pathogens-here
+    if nearest != nobody [
+      set learned_code [secret_code] of nearest
+      set activated? true
+      set color green
+      ask nearest [die]
+    ]
   ]
 end
 
-to setup-bone-marrow
-  set bone_marrow? (distancexy 10 10) < 4
-  if bone_marrow? [
-    set pcolor pink
+to lymphocyte-detect-pathogen
+  if activated? [
+    let nearest one-of pathogens-here
+    if nearest != nobody [
+      let pathogen_code [secret_code] of nearest
+      if pathogen_code = learned_code [
+        ask nearest [die]
+      ]
+    ]
   ]
 end
 
-to detect-antigen
-  let nearest one-of antigens-here
-  if nearest != nobody [
-    set learned_code [secret_code] of nearest
-    set color green
-    ask nearest [die]
+to detect-lymphocyte
+  if activated? [
+    let nearest one-of lymphocytes-here
+    let my_code learned_code
+    if nearest != nobody [
+      ask nearest [set learned_code my_code
+        set activated? true
+        set color green
+      ]
+      ; after it passes on the knowledge of the pathogen the macrophage is used up
+      die
+    ]
   ]
 end
 
@@ -92,9 +117,9 @@ to move
   fd 1
 end
 
-to reproduce-antigen
-  ; five percent chance of reproducing on every tick
-  if random-float 100 <= 5 [
+to reproduce-pathogen
+  ; ten percent chance of reproducing on every tick
+  if random-float 100 <= 10 [
     hatch 1 [
       rt random-float 360 fd 1
     ]
@@ -103,4 +128,47 @@ to reproduce-antigen
   ; five percent chance of dying on every tick
   if random-float 100 <= 5 [
     die ]
+end
+
+to produce-immune-cells
+  create-lymphocytes lymphocyte_production [
+    set color white
+    setxy random-xcor random-ycor
+    set activated? false
+    set tick-count 0
+  ]
+  
+  ; Produces 1/10th the macrophages as lymphocytes
+  ; and ensures at least one macrophage produced
+  let macro-production max list (lymphocyte_production / 10) 1
+  
+  create-macrophages macro-production  [
+    set color white
+    setxy random-xcor random-ycor
+    set activated? false
+  ]
+end
+to reproduce-lymphocyte
+  ; ten percent chance of reproducing on every tick
+  ; this only applies to active lymphocytes that have 
+  ; been triggered to reproduce through mitosis. Unactivated
+  ; lymphocytes are produced by the body.
+  let my_code learned_code
+  if activated? [
+    if random-float 100 <= 10 [
+      hatch 1 [
+        set learned_code my_code
+        set activated? true
+        set color green
+      ]
+    ]
+  ]
+end
+
+to update-tick-count
+  set tick-count tick-count + 1
+  ; lymphocytes have to die of old age eventually
+  ; We say 3 seconds which is 45 ticks when the 
+  ; frame rate is 15 ticks/second
+  if tick-count = 120 [die]
 end
