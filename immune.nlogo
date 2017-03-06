@@ -1,3 +1,7 @@
+; TODO macrophages need to die eventually too
+; Maybe after a period of time without killing a pathogen
+; a lymphocyte turns into a supressor and tells anything
+; using the same code to stop reproducing
 breed [pathogens pathogen] ; foregin invaders in body
 breed [lymphocytes lymphocyte] ; immune cells. Need activating
 breed [macrophages macrophage] ; immune cells. Identify intruders
@@ -243,7 +247,7 @@ pathogen_count
 pathogen_count
 1
 100
-50.0
+90.0
 1
 1
 NIL
@@ -278,7 +282,7 @@ lymphocyte_production
 lymphocyte_production
 1
 100
-50.0
+18.0
 1
 1
 NIL
