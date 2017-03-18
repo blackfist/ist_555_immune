@@ -4,8 +4,7 @@
 ; using the same code to stop reproducing
 breed [pathogens pathogen] ; foregin invaders in body
 breed [lymphocytes lymphocyte] ; immune cells. Need activating
-breed [macrophages macrophage] ; immune cells. Identify intruders
-breed [activators activator] ; activator protein turns on lymphocites
+breed [macrophages macrophage] ; immune cells. Identify intruders & activate lymphocytes
 
 pathogens-own [
   secret_code
@@ -20,6 +19,7 @@ lymphocytes-own [
   learned_code
   activated?
   tick-count
+  ticks-since-last-kill
 ]
 
 to setup
@@ -122,9 +122,20 @@ to move
 end
 
 to reproduce-pathogen
+  ; get the secret code of the parent
+  let my_code secret_code
   ; ten percent chance of reproducing on every tick
   if random-float 100 <= 10 [
     hatch 1 [
+      if mutation [
+        ; 1/10th of a percent chance of mutation on every
+        ; reproduction cycle
+        ifelse random-float 100 <= .1 [
+          print "suddenly a mutant appears"
+          set secret_code random 8999 + 1000
+        ]  [set secret_code my_code ]
+      ]
+
       rt random-float 360 fd 1
     ]
   ]
@@ -142,9 +153,9 @@ to produce-immune-cells
     set tick-count 0
   ]
 
-  ; Produces 1/10th the macrophages as lymphocytes
+  ; Produces 1/8th the macrophages as lymphocytes
   ; and ensures at least one macrophage produced
-  let macro-production max list (lymphocyte_production / 10) 1
+  let macro-production max list (lymphocyte_production / 8) 1
 
   create-macrophages macro-production  [
     set color white
@@ -247,7 +258,7 @@ pathogen_count
 pathogen_count
 1
 100
-90.0
+72.0
 1
 1
 NIL
@@ -282,16 +293,16 @@ lymphocyte_production
 lymphocyte_production
 1
 100
-18.0
+30.0
 1
 1
 NIL
 HORIZONTAL
 
 BUTTON
-116
+120
 37
-179
+183
 70
 new
 add-new-pathogen
@@ -304,6 +315,17 @@ NIL
 NIL
 NIL
 1
+
+SWITCH
+120
+79
+232
+112
+mutation
+mutation
+0
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?

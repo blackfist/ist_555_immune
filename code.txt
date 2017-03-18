@@ -1,7 +1,10 @@
+; TODO macrophages need to die eventually too
+; Maybe after a period of time without killing a pathogen
+; a lymphocyte turns into a supressor and tells anything
+; using the same code to stop reproducing
 breed [pathogens pathogen] ; foregin invaders in body
 breed [lymphocytes lymphocyte] ; immune cells. Need activating
-breed [macrophages macrophage] ; immune cells. Identify intruders
-breed [activators activator] ; activator protein turns on lymphocites
+breed [macrophages macrophage] ; immune cells. Identify intruders & activate lymphocytes
 
 pathogens-own [
   secret_code
@@ -16,15 +19,16 @@ lymphocytes-own [
   learned_code
   activated?
   tick-count
+  ticks-since-last-kill
 ]
 
 to setup
   clear-all
   set-default-shape pathogens "bug"
   set-default-shape lymphocytes "square 2"
-  
+
   add-new-pathogen
-  
+
   produce-immune-cells
   reset-ticks
 end
@@ -47,14 +51,14 @@ to go
     lymphocyte-detect-pathogen
     update-tick-count
   ]
-  
+
   if count lymphocytes > 10000 [
     ask lymphocytes [
       set color white
       set activated? false
     ]
   ]
-  
+
   every 1 [produce-immune-cells]
   every 1 [ask n-of lymphocyte_production lymphocytes [die]]
   tick
@@ -118,9 +122,20 @@ to move
 end
 
 to reproduce-pathogen
+  ; get the secret code of the parent
+  let my_code secret_code
   ; ten percent chance of reproducing on every tick
   if random-float 100 <= 10 [
     hatch 1 [
+      if mutation [
+        ; 1/10th of a percent chance of mutation on every
+        ; reproduction cycle
+        ifelse random-float 100 <= .1 [
+          print "suddenly a mutant appears"
+          set secret_code random 8999 + 1000
+        ]  [set secret_code my_code ]
+      ]
+      
       rt random-float 360 fd 1
     ]
   ]
@@ -137,11 +152,11 @@ to produce-immune-cells
     set activated? false
     set tick-count 0
   ]
-  
-  ; Produces 1/10th the macrophages as lymphocytes
+
+  ; Produces 1/8th the macrophages as lymphocytes
   ; and ensures at least one macrophage produced
-  let macro-production max list (lymphocyte_production / 10) 1
-  
+  let macro-production max list (lymphocyte_production / 8) 1
+
   create-macrophages macro-production  [
     set color white
     setxy random-xcor random-ycor
@@ -150,7 +165,7 @@ to produce-immune-cells
 end
 to reproduce-lymphocyte
   ; ten percent chance of reproducing on every tick
-  ; this only applies to active lymphocytes that have 
+  ; this only applies to active lymphocytes that have
   ; been triggered to reproduce through mitosis. Unactivated
   ; lymphocytes are produced by the body.
   let my_code learned_code
@@ -168,7 +183,7 @@ end
 to update-tick-count
   set tick-count tick-count + 1
   ; lymphocytes have to die of old age eventually
-  ; We say 3 seconds which is 45 ticks when the 
+  ; We say 3 seconds which is 45 ticks when the
   ; frame rate is 15 ticks/second
   if tick-count = 120 [die]
 end
