@@ -68,6 +68,14 @@ to go
   tick
 end
 
+to antibodies
+  create-macrophages 1000  [
+    set color white
+    setxy random-xcor random-ycor
+    set activated? false
+  ]
+end
+
 to deactivate-lymphocyte
   if ticks-since-last-kill > 22 [
     set color white

@@ -68,6 +68,14 @@ to go
   tick
 end
 
+to antibodies
+  create-macrophages 1000  [
+    set color white
+    setxy random-xcor random-ycor
+    set activated? false
+  ]
+end
+
 to deactivate-lymphocyte
   if ticks-since-last-kill > 22 [
     set color white
@@ -265,10 +273,10 @@ NIL
 1
 
 SLIDER
-32
-153
-233
-186
+35
+235
+236
+268
 pathogen_count
 pathogen_count
 1
@@ -280,10 +288,10 @@ NIL
 HORIZONTAL
 
 PLOT
-10
-208
-281
-391
+13
+290
+284
+473
 cell count
 NIL
 pathogens
@@ -300,10 +308,10 @@ PENS
 "macro" 1.0 0 -14070903 true "" "plot log count macrophages 2"
 
 SLIDER
-32
-120
-233
-153
+35
+202
+236
+235
 lymphocyte_production
 lymphocyte_production
 1
@@ -332,15 +340,32 @@ NIL
 1
 
 SWITCH
-120
-79
-232
-112
+36
+156
+235
+189
 mutation
 mutation
-0
+1
 1
 -1000
+
+BUTTON
+120
+82
+216
+115
+NIL
+antibodies
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
