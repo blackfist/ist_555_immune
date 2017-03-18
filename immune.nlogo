@@ -6,6 +6,8 @@ breed [pathogens pathogen] ; foregin invaders in body
 breed [lymphocytes lymphocyte] ; immune cells. Need activating
 breed [macrophages macrophage] ; immune cells. Identify intruders & activate lymphocytes
 
+globals [mutation-allowed]
+
 pathogens-own [
   secret_code
 ]
@@ -30,6 +32,8 @@ to setup
   add-new-pathogen
 
   produce-immune-cells
+
+  set mutation-allowed mutation
   reset-ticks
 end
 
@@ -50,18 +54,25 @@ to go
     reproduce-lymphocyte
     lymphocyte-detect-pathogen
     update-tick-count
+    deactivate-lymphocyte
   ]
 
-  if count lymphocytes > 10000 [
-    ask lymphocytes [
-      set color white
-      set activated? false
-    ]
-  ]
+  ; This is to prevent runaway mutation
+  ifelse count pathogens > 1000
+    [set mutation-allowed false]
+    [set mutation-allowed mutation]
+
 
   every 1 [produce-immune-cells]
   every 1 [ask n-of lymphocyte_production lymphocytes [die]]
   tick
+end
+
+to deactivate-lymphocyte
+  if ticks-since-last-kill > 22 [
+    set color white
+    set activated? false
+  ]
 end
 
 to add-new-pathogen
@@ -95,6 +106,7 @@ to lymphocyte-detect-pathogen
       let pathogen_code [secret_code] of nearest
       if pathogen_code = learned_code [
         ask nearest [die]
+        set ticks-since-last-kill 0
       ]
     ]
   ]
@@ -127,10 +139,10 @@ to reproduce-pathogen
   ; ten percent chance of reproducing on every tick
   if random-float 100 <= 10 [
     hatch 1 [
-      if mutation [
-        ; 1/10th of a percent chance of mutation on every
+      if mutation-allowed [
+        ; 1/20th of a percent chance of mutation on every
         ; reproduction cycle
-        ifelse random-float 100 <= .1 [
+        ifelse random-float 100 <= .05 [
           print "suddenly a mutant appears"
           set secret_code random 8999 + 1000
         ]  [set secret_code my_code ]
@@ -182,6 +194,9 @@ end
 
 to update-tick-count
   set tick-count tick-count + 1
+  ; keep track of how many ticks it has been since
+  ; the lymphocyte saw and destroyed something
+  set ticks-since-last-kill ticks-since-last-kill + 1
   ; lymphocytes have to die of old age eventually
   ; We say 3 seconds which is 45 ticks when the
   ; frame rate is 15 ticks/second
@@ -258,7 +273,7 @@ pathogen_count
 pathogen_count
 1
 100
-72.0
+50.0
 1
 1
 NIL
@@ -280,9 +295,9 @@ true
 true
 "" ""
 PENS
-"pathogen" 1.0 0 -2674135 true "" "plot count pathogens"
-"lymph" 1.0 0 -13840069 true "" "plot count lymphocytes"
-"macro" 1.0 0 -14070903 true "" "plot count macrophages"
+"pathogen" 1.0 0 -2674135 true "" "plot log count pathogens 2"
+"lymph" 1.0 0 -13840069 true "" "plot log count lymphocytes 2"
+"macro" 1.0 0 -14070903 true "" "plot log count macrophages 2"
 
 SLIDER
 32
@@ -293,7 +308,7 @@ lymphocyte_production
 lymphocyte_production
 1
 100
-30.0
+50.0
 1
 1
 NIL
